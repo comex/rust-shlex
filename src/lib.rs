@@ -1,9 +1,7 @@
 // Copyright 2015 Nicholas Allegra (comex).
-// Licensed under the Apache License, Version 2.0 <LICENSE-APACHE or
-// http://www.apache.org/licenses/LICENSE-2.0> or the MIT license
-// <LICENSE-MIT or http://opensource.org/licenses/MIT>, at your
-// option. This file may not be copied, modified, or distributed
-// except according to those terms.
+// Licensed under the Apache License, Version 2.0 <http://www.apache.org/licenses/LICENSE-2.0> or
+// the MIT license <http://opensource.org/licenses/MIT>, at your option. This file may not be
+// copied, modified, or distributed except according to those terms.
 
 //! Same idea as (but implementation not directly based on) the Python shlex module.  However, this
 //! implementation does not support any of the Python module's customization because it makes
