@@ -130,11 +130,15 @@ impl<'a> Iterator for Shlex<'a> {
             // skip initial whitespace
             loop {
                 match ch as char {
-                    ' ' | '\t' | '\n' => {
-                        if let Some(ch2) = self.next_char() { ch = ch2; } else { return None; }
+                    ' ' | '\t' | '\n' => {},
+                    '#' => {
+                        while let Some(ch2) = self.next_char() {
+                            if ch2 as char == '\n' { break; }
+                        }
                     },
                     _ => { break; }
                 }
+                if let Some(ch2) = self.next_char() { ch = ch2; } else { return None; }
             }
             self.parse_word(ch)
         } else { // no initial character
@@ -193,6 +197,10 @@ static SPLIT_TEST_ITEMS: &'static [(&'static str, Option<&'static [&'static str]
     ("'\\", None),
     ("\"", None),
     ("'", None),
+    ("foo #bar\nbaz", Some(&["foo", "baz"])),
+    ("foo #bar", Some(&["foo"])),
+    ("foo#bar", Some(&["foo#bar"])),
+    ("foo\"#bar", None),
 ];
 
 #[test]
