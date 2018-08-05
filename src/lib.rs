@@ -181,6 +181,15 @@ pub fn quote(in_str: &str) -> Cow<str> {
     }
 }
 
+/// Convenience function that consumes an iterable of words and turns it into a single string,
+/// quoting words when necessary. Consecutive words will be separated by a single space.
+pub fn join<'a, I: IntoIterator<Item = &'a str>>(words: I) -> String {
+    words.into_iter()
+        .map(quote)
+        .collect::<Vec<_>>()
+        .join(" ")
+}
+
 #[cfg(test)]
 static SPLIT_TEST_ITEMS: &'static [(&'static str, Option<&'static [&'static str]>)] = &[
     ("foo$baz", Some(&["foo$baz"])),
@@ -226,4 +235,12 @@ fn test_quote() {
     assert_eq!(quote("foo bar"), "\"foo bar\"");
     assert_eq!(quote("\""), "\"\\\"\"");
     assert_eq!(quote(""), "\"\"");
+}
+
+#[test]
+fn test_join() {
+    assert_eq!(join(vec![]), "");
+    assert_eq!(join(vec![""]), "\"\"");
+    assert_eq!(join(vec!["a", "b"]), "a b");
+    assert_eq!(join(vec!["foo bar", "baz"]), "\"foo bar\" baz");
 }
