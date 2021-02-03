@@ -1,6 +1,6 @@
 [package]
 name = "shlex"
-version = "0.1.1"
+version = "1.0.0"
 authors = [
     "comex <comexk@gmail.com>",
     "Fenhl <fenhl@fenhl.net>"
