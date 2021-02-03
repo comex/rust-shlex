@@ -10,3 +10,7 @@ repository = "https://github.com/comex/rust-shlex"
 description = """
 Split a string into shell words, like Python's shlex.
 """
+caegories = [
+    "command-line-interface",
+    "parser-implementations"
+]
