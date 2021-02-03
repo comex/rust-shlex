@@ -96,17 +96,6 @@ impl<'a> Shlex<'a> {
         loop {
             if let Some(ch2) = self.next_char() {
                 match ch2 as char {
-                    '\\' => {
-                        if let Some(ch3) = self.next_char() {
-                            match ch3 as char {
-                                // for single quotes, only these can be escaped
-                                '\'' | '\\' => { result.push(ch3); },
-                                _ => { result.push('\\' as u8); result.push(ch3); }
-                            }
-                        } else {
-                            return Err(());
-                        }
-                    },
                     '\'' => { return Ok(()); },
                     _ => { result.push(ch2); },
                 }
@@ -200,7 +189,7 @@ static SPLIT_TEST_ITEMS: &'static [(&'static str, Option<&'static [&'static str]
     ("foo\\\nbar", Some(&["foobar"])),
     ("\"foo\\\nbar\"", Some(&["foobar"])),
     ("'baz\\$b'", Some(&["baz\\$b"])),
-    ("'baz\\\''", Some(&["baz\'"])),
+    ("'baz\\\''", None),
     ("\\", None),
     ("\"\\", None),
     ("'\\", None),
@@ -210,6 +199,8 @@ static SPLIT_TEST_ITEMS: &'static [(&'static str, Option<&'static [&'static str]
     ("foo #bar", Some(&["foo"])),
     ("foo#bar", Some(&["foo#bar"])),
     ("foo\"#bar", None),
+    ("'\\n'", Some(&["\\n"])),
+    ("'\\\\n'", Some(&["\\\\n"])),
 ];
 
 #[test]
