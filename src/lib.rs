@@ -1,13 +1,13 @@
 // Copyright 2015 Nicholas Allegra (comex).
-// Licensed under the Apache License, Version 2.0 <http://www.apache.org/licenses/LICENSE-2.0> or
-// the MIT license <http://opensource.org/licenses/MIT>, at your option. This file may not be
+// Licensed under the Apache License, Version 2.0 <https://www.apache.org/licenses/LICENSE-2.0> or
+// the MIT license <https://opensource.org/licenses/MIT>, at your option. This file may not be
 // copied, modified, or distributed except according to those terms.
 
 //! Same idea as (but implementation not directly based on) the Python shlex module.  However, this
 //! implementation does not support any of the Python module's customization because it makes
 //! parsing slower and is fairly useless.  You only get the default settings of shlex.split, which
 //! mimic the POSIX shell:
-//! http://pubs.opengroup.org/onlinepubs/9699919799/utilities/V3_chap02.html
+//! https://pubs.opengroup.org/onlinepubs/9699919799/utilities/V3_chap02.html
 //!
 //! This implementation also deviates from the Python version in not treating \r specially, which I
 //! believe is more compliant.
