@@ -14,13 +14,25 @@
 //!
 //! The algorithms in this crate are oblivious to UTF-8 high bytes, so they iterate over the bytes
 //! directly as a micro-optimization.
+//!
+//! Disabling the `std` feature (which is enabled by default) will allow the crate to work in
+//! `no_std` environments, where a the `alloc` crate, and a global allocator, are available.
 
-use std::borrow::Cow;
+#![cfg_attr(not(feature = "std"), no_std)]
+
+extern crate alloc;
+use alloc::vec::Vec;
+use alloc::borrow::Cow;
+use alloc::string::String;
+#[cfg(test)]
+use alloc::vec;
+#[cfg(test)]
+use alloc::borrow::ToOwned;
 
 /// An iterator that takes an input string and splits it into the words using the same syntax as
 /// the POSIX shell.
 pub struct Shlex<'a> {
-    in_iter: std::str::Bytes<'a>,
+    in_iter: core::str::Bytes<'a>,
     /// The number of newlines read so far, plus one.
     pub line_no: usize,
     /// An input string is erroneous if it ends while inside a quotation or right after an

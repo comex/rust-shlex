@@ -12,3 +12,7 @@ categories = [
     "command-line-interface",
     "parser-implementations"
 ]
+
+[features]
+std = []
+default = ["std"]

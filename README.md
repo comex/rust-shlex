@@ -11,6 +11,10 @@ specially, which I believe is more compliant.
 The algorithms in this crate are oblivious to UTF-8 high bytes, so they iterate
 over the bytes directly as a micro-optimization.
 
+Disabling the `std` feature (which is enabled by default) will allow the crate
+to work in `no_std` environments, where a the `alloc` crate, and a global
+allocator, are available.
+
 # LICENSE
 
 The source code in this repository is Licensed under either of
