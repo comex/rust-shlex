@@ -7,10 +7,10 @@
 //! implementation does not support any of the Python module's customization because it makes
 //! parsing slower and is fairly useless.  You only get the default settings of shlex.split, which
 //! mimic the POSIX shell:
-//! https://pubs.opengroup.org/onlinepubs/9699919799/utilities/V3_chap02.html
+//! <https://pubs.opengroup.org/onlinepubs/9699919799/utilities/V3_chap02.html>
 //!
-//! This implementation also deviates from the Python version in not treating \r specially, which I
-//! believe is more compliant.
+//! This implementation also deviates from the Python version in not treating `\r` specially, which
+//! I believe is more compliant.
 //!
 //! The algorithms in this crate are oblivious to UTF-8 high bytes, so they iterate over the bytes
 //! directly as a micro-optimization.
