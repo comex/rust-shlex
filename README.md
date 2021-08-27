@@ -1,3 +1,11 @@
+[![ci badge]][ci link] [![crates.io badge]][crates.io link] [![docs.rs badge]][docs.rs link]
+
+[crates.io badge]: https://img.shields.io/crates/v/shlex.svg?style=flat-square
+[crates.io link]: https://crates.io/crates/shlex
+[docs.rs badge]: https://img.shields.io/badge/docs-online-dddddd.svg?style=flat-square
+[docs.rs link]: https://docs.rs/shlex
+[ci badge]: https://img.shields.io/github/workflow/status/comex/rust-shlex/Rust.svg?style=flat-square
+[ci link]: https://github.com/comex/rust-shlex/actions
 
 Same idea as (but implementation not directly based on) the Python shlex
 module. However, this implementation does not support any of the Python
