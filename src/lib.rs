@@ -16,7 +16,7 @@
 //! directly as a micro-optimization.
 //!
 //! Disabling the `std` feature (which is enabled by default) will allow the crate to work in
-//! `no_std` environments, where a the `alloc` crate, and a global allocator, are available.
+//! `no_std` environments, where the `alloc` crate, and a global allocator, are available.
 
 #![cfg_attr(not(feature = "std"), no_std)]
 
