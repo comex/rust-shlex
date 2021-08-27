@@ -7,10 +7,12 @@ authors = [
 ]
 license = "MIT OR Apache-2.0"
 repository = "https://github.com/comex/rust-shlex"
-description = """
-Split a string into shell words, like Python's shlex.
-"""
-caegories = [
+description = "Split a string into shell words, like Python's shlex."
+categories = [
     "command-line-interface",
     "parser-implementations"
 ]
+
+[features]
+std = []
+default = ["std"]
