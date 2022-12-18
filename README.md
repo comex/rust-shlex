@@ -4,7 +4,7 @@
 [crates.io link]: https://crates.io/crates/shlex
 [docs.rs badge]: https://img.shields.io/badge/docs-online-dddddd.svg?style=flat-square
 [docs.rs link]: https://docs.rs/shlex
-[ci badge]: https://img.shields.io/github/workflow/status/comex/rust-shlex/Rust.svg?style=flat-square
+[ci badge]: https://img.shields.io/github/actions/workflow/status/comex/rust-shlex/test.yml?branch=master&style=flat-square
 [ci link]: https://github.com/comex/rust-shlex/actions
 
 Same idea as (but implementation not directly based on) the Python shlex
