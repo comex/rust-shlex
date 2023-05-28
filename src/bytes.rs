@@ -3,38 +3,37 @@
 // the MIT license <https://opensource.org/licenses/MIT>, at your option. This file may not be
 // copied, modified, or distributed except according to those terms.
 
-//! Same idea as (but implementation not directly based on) the Python shlex module.  However, this
-//! implementation does not support any of the Python module's customization because it makes
-//! parsing slower and is fairly useless.  You only get the default settings of shlex.split, which
-//! mimic the POSIX shell:
-//! <https://pubs.opengroup.org/onlinepubs/9699919799/utilities/V3_chap02.html>
+//! [`Shlex`] and friends for byte strings.
 //!
-//! This implementation also deviates from the Python version in not treating `\r` specially, which
-//! I believe is more compliant.
+//! This may be more convenient if you are working with byte slices (`[u8]`)
+//! or types that are wrappers around bytes, such as [`OsStr`](std::ffi::OsStr):
 //!
-//! The algorithms in this crate are oblivious to UTF-8 high bytes, so they iterate over the bytes
-//! directly as a micro-optimization.
+//! ```rust
+//! #[cfg(unix)] {
+//!     use shlex::bytes::quote;
+//!     use std::ffi::OsStr;
+//!     use std::os::unix::ffi::OsStrExt;
 //!
-//! Disabling the `std` feature (which is enabled by default) will allow the crate to work in
-//! `no_std` environments, where the `alloc` crate, and a global allocator, are available.
-
-#![cfg_attr(not(feature = "std"), no_std)]
+//!     // `\x80` is invalid in UTF-8.
+//!     let os_str = OsStr::from_bytes(b"a\x80b c");
+//!     assert_eq!(quote(os_str.as_bytes()), &b"\"a\x80b c\""[..]);
+//! }
+//! ```
+//!
+//! (On Windows, `OsStr` uses 16 bit wide characters so this will not work.)
 
 extern crate alloc;
 use alloc::vec::Vec;
 use alloc::borrow::Cow;
-use alloc::string::String;
 #[cfg(test)]
 use alloc::vec;
 #[cfg(test)]
 use alloc::borrow::ToOwned;
 
-pub mod bytes;
-
-/// An iterator that takes an input string and splits it into the words using the same syntax as
+/// An iterator that takes an input byte string and splits it into the words using the same syntax as
 /// the POSIX shell.
 pub struct Shlex<'a> {
-    in_iter: core::str::Bytes<'a>,
+    in_iter: core::slice::Iter<'a, u8>,
     /// The number of newlines read so far, plus one.
     pub line_no: usize,
     /// An input string is erroneous if it ends while inside a quotation or right after an
@@ -45,15 +44,15 @@ pub struct Shlex<'a> {
 }
 
 impl<'a> Shlex<'a> {
-    pub fn new(in_str: &'a str) -> Self {
+    pub fn new(in_bytes: &'a [u8]) -> Self {
         Shlex {
-            in_iter: in_str.bytes(),
+            in_iter: in_bytes.iter(),
             line_no: 1,
             had_error: false,
         }
     }
 
-    fn parse_word(&mut self, mut ch: u8) -> Option<String> {
+    fn parse_word(&mut self, mut ch: u8) -> Option<Vec<u8>> {
         let mut result: Vec<u8> = Vec::new();
         loop {
             match ch as char {
@@ -76,7 +75,7 @@ impl<'a> Shlex<'a> {
             }
             if let Some(ch2) = self.next_char() { ch = ch2; } else { break; }
         }
-        unsafe { Some(String::from_utf8_unchecked(result)) }
+        Some(result)
     }
 
     fn parse_double(&mut self, result: &mut Vec<u8>) -> Result<(), ()> {
@@ -120,15 +119,15 @@ impl<'a> Shlex<'a> {
     }
 
     fn next_char(&mut self) -> Option<u8> {
-        let res = self.in_iter.next();
-        if res == Some('\n' as u8) { self.line_no += 1; }
+        let res = self.in_iter.next().copied();
+        if res == Some(b'\n') { self.line_no += 1; }
         res
     }
 }
 
 impl<'a> Iterator for Shlex<'a> {
-    type Item = String;
-    fn next(&mut self) -> Option<String> {
+    type Item = Vec<u8>;
+    fn next(&mut self) -> Option<Self::Item> {
         if let Some(mut ch) = self.next_char() {
             // skip initial whitespace
             loop {
@@ -151,59 +150,85 @@ impl<'a> Iterator for Shlex<'a> {
 
 }
 
-/// Convenience function that consumes the whole string at once.  Returns None if the input was
+/// Convenience function that consumes the whole byte string at once.  Returns None if the input was
 /// erroneous.
-pub fn split(in_str: &str) -> Option<Vec<String>> {
-    let mut shl = Shlex::new(in_str);
+pub fn split(in_bytes: &[u8]) -> Option<Vec<Vec<u8>>> {
+    let mut shl = Shlex::new(in_bytes);
     let res = shl.by_ref().collect();
     if shl.had_error { None } else { Some(res) }
 }
 
-/// Given a single word, return a string suitable to encode it as a shell argument.
-pub fn quote(in_str: &str) -> Cow<str> {
-    match bytes::quote(in_str.as_bytes()) {
-        Cow::Borrowed(out) => {
-            // Safety: given valid UTF-8, bytes::quote() will always return valid UTF-8.
-            unsafe { core::str::from_utf8_unchecked(out) }.into()
+/// Given a single word, return a byte string suitable to encode it as a shell argument.
+///
+/// If given valid UTF-8, this will never produce invalid UTF-8. This is because it only
+/// ever inserts valid ASCII characters before or after existing ASCII characters (or
+/// returns two double quotes if the input was an empty string). It will never modify a
+/// multibyte UTF-8 character.
+pub fn quote(in_bytes: &[u8]) -> Cow<[u8]> {
+    if in_bytes.len() == 0 {
+        b"\"\""[..].into()
+    } else if in_bytes.iter().any(|c| match *c as char {
+        '|' | '&' | ';' | '<' | '>' | '(' | ')' | '$' | '`' | '\\' | '"' | '\'' | ' ' | '\t' |
+        '\r' | '\n' | '*' | '?' | '[' | '#' | '~' | '=' | '%' => true,
+        _ => false
+    }) {
+        let mut out: Vec<u8> = Vec::new();
+        out.push(b'"');
+        for &c in in_bytes {
+            match c {
+                b'$' | b'`' | b'"' | b'\\' => out.push(b'\\'),
+                _ => ()
+            }
+            out.push(c);
         }
-        Cow::Owned(out) => {
-            // Safety: given valid UTF-8, bytes::quote() will always return valid UTF-8.
-            unsafe { String::from_utf8_unchecked(out) }.into()
-        }
+        out.push(b'"');
+        out.into()
+    } else {
+        in_bytes.into()
     }
 }
 
-/// Convenience function that consumes an iterable of words and turns it into a single string,
+/// Convenience function that consumes an iterable of words and turns it into a single byte string,
 /// quoting words when necessary. Consecutive words will be separated by a single space.
-pub fn join<'a, I: IntoIterator<Item = &'a str>>(words: I) -> String {
+pub fn join<'a, I: core::iter::IntoIterator<Item = &'a [u8]>>(words: I) -> Vec<u8> {
     words.into_iter()
         .map(quote)
         .collect::<Vec<_>>()
-        .join(" ")
+        .join(&b' ')
 }
 
 #[cfg(test)]
-static SPLIT_TEST_ITEMS: &'static [(&'static str, Option<&'static [&'static str]>)] = &[
-    ("foo$baz", Some(&["foo$baz"])),
-    ("foo baz", Some(&["foo", "baz"])),
-    ("foo\"bar\"baz", Some(&["foobarbaz"])),
-    ("foo \"bar\"baz", Some(&["foo", "barbaz"])),
-    ("   foo \nbar", Some(&["foo", "bar"])),
-    ("foo\\\nbar", Some(&["foobar"])),
-    ("\"foo\\\nbar\"", Some(&["foobar"])),
-    ("'baz\\$b'", Some(&["baz\\$b"])),
-    ("'baz\\\''", None),
-    ("\\", None),
-    ("\"\\", None),
-    ("'\\", None),
-    ("\"", None),
-    ("'", None),
-    ("foo #bar\nbaz", Some(&["foo", "baz"])),
-    ("foo #bar", Some(&["foo"])),
-    ("foo#bar", Some(&["foo#bar"])),
-    ("foo\"#bar", None),
-    ("'\\n'", Some(&["\\n"])),
-    ("'\\\\n'", Some(&["\\\\n"])),
+const INVALID_UTF8: &[u8] = b"\xa1";
+
+#[test]
+fn test_invalid_utf8() {
+    // Check that our test string is actually invalid UTF-8.
+    assert!(core::str::from_utf8(INVALID_UTF8).is_err());
+}
+
+#[cfg(test)]
+static SPLIT_TEST_ITEMS: &'static [(&'static [u8], Option<&'static [&'static [u8]]>)] = &[
+    (b"foo$baz", Some(&[b"foo$baz"])),
+    (b"foo baz", Some(&[b"foo", b"baz"])),
+    (b"foo\"bar\"baz", Some(&[b"foobarbaz"])),
+    (b"foo \"bar\"baz", Some(&[b"foo", b"barbaz"])),
+    (b"   foo \nbar", Some(&[b"foo", b"bar"])),
+    (b"foo\\\nbar", Some(&[b"foobar"])),
+    (b"\"foo\\\nbar\"", Some(&[b"foobar"])),
+    (b"'baz\\$b'", Some(&[b"baz\\$b"])),
+    (b"'baz\\\''", None),
+    (b"\\", None),
+    (b"\"\\", None),
+    (b"'\\", None),
+    (b"\"", None),
+    (b"'", None),
+    (b"foo #bar\nbaz", Some(&[b"foo", b"baz"])),
+    (b"foo #bar", Some(&[b"foo"])),
+    (b"foo#bar", Some(&[b"foo#bar"])),
+    (b"foo\"#bar", None),
+    (b"'\\n'", Some(&[b"\\n"])),
+    (b"'\\\\n'", Some(&[b"\\\\n"])),
+    (INVALID_UTF8, Some(&[INVALID_UTF8])),
 ];
 
 #[test]
@@ -215,9 +240,9 @@ fn test_split() {
 
 #[test]
 fn test_lineno() {
-    let mut sh = Shlex::new("\nfoo\nbar");
+    let mut sh = Shlex::new(b"\nfoo\nbar");
     while let Some(word) = sh.next() {
-        if word == "bar" {
+        if word == b"bar" {
             assert_eq!(sh.line_no, 3);
         }
     }
@@ -225,16 +250,18 @@ fn test_lineno() {
 
 #[test]
 fn test_quote() {
-    assert_eq!(quote("foobar"), "foobar");
-    assert_eq!(quote("foo bar"), "\"foo bar\"");
-    assert_eq!(quote("\""), "\"\\\"\"");
-    assert_eq!(quote(""), "\"\"");
+    assert_eq!(quote(b"foobar"), &b"foobar"[..]);
+    assert_eq!(quote(b"foo bar"), &b"\"foo bar\""[..]);
+    assert_eq!(quote(b"\""), &b"\"\\\"\""[..]);
+    assert_eq!(quote(b""), &b"\"\""[..]);
+    assert_eq!(quote(INVALID_UTF8), INVALID_UTF8);
 }
 
 #[test]
 fn test_join() {
-    assert_eq!(join(vec![]), "");
-    assert_eq!(join(vec![""]), "\"\"");
-    assert_eq!(join(vec!["a", "b"]), "a b");
-    assert_eq!(join(vec!["foo bar", "baz"]), "\"foo bar\" baz");
+    assert_eq!(join(vec![]), &b""[..]);
+    assert_eq!(join(vec![&b""[..]]), &b"\"\""[..]);
+    assert_eq!(join(vec![&b"a"[..], &b"b"[..]]), &b"a b"[..]);
+    assert_eq!(join(vec![&b"foo bar"[..], &b"baz"[..]]), &b"\"foo bar\" baz"[..]);
+    assert_eq!(join(vec![INVALID_UTF8]), INVALID_UTF8);
 }
