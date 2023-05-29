@@ -5,8 +5,9 @@
 
 //! [`Shlex`] and friends for byte strings.
 //!
-//! This may be more convenient if you are working with byte slices (`[u8]`)
-//! or types that are wrappers around bytes, such as [`OsStr`](std::ffi::OsStr):
+//! This is used internally by the [outer module](crate), and may be more
+//! convenient if you are working with byte slices (`[u8]`) or types that are
+//! wrappers around bytes, such as [`OsStr`](std::ffi::OsStr):
 //!
 //! ```rust
 //! #[cfg(unix)] {
