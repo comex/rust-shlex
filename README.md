@@ -16,8 +16,9 @@ You only get the default settings of shlex.split, which mimic the POSIX shell:
 This implementation also deviates from the Python version in not treating \r
 specially, which I believe is more compliant.
 
-The algorithms in this crate are oblivious to UTF-8 high bytes, so they iterate
-over the bytes directly as a micro-optimization.
+This crate can be used on either normal Rust strings, or on byte strings with
+the `bytes` module. The algorithms used are oblivious to UTF-8 high bytes, so
+internally they all work on bytes directly as a micro-optimization.
 
 Disabling the `std` feature (which is enabled by default) will allow the crate
 to work in `no_std` environments, where the `alloc` crate, and a global

@@ -12,8 +12,9 @@
 //! This implementation also deviates from the Python version in not treating `\r` specially, which
 //! I believe is more compliant.
 //!
-//! The algorithms in this crate are oblivious to UTF-8 high bytes, so they iterate over the bytes
-//! directly as a micro-optimization.
+//! This is a string-friendly wrapper around the [bytes] module that works on the underlying byte
+//! slices. The algorithms in this crate are oblivious to UTF-8 high bytes, so working directly
+//! with bytes is a safe micro-optimization.
 //!
 //! Disabling the `std` feature (which is enabled by default) will allow the crate to work in
 //! `no_std` environments, where the `alloc` crate, and a global allocator, are available.
@@ -29,124 +30,42 @@ use alloc::vec;
 #[cfg(test)]
 use alloc::borrow::ToOwned;
 
+pub mod bytes;
+
 /// An iterator that takes an input string and splits it into the words using the same syntax as
 /// the POSIX shell.
-pub struct Shlex<'a> {
-    in_iter: core::str::Bytes<'a>,
-    /// The number of newlines read so far, plus one.
-    pub line_no: usize,
-    /// An input string is erroneous if it ends while inside a quotation or right after an
-    /// unescaped backslash.  Since Iterator does not have a mechanism to return an error, if that
-    /// happens, Shlex just throws out the last token, ends the iteration, and sets 'had_error' to
-    /// true; best to check it after you're done iterating.
-    pub had_error: bool,
-}
+///
+/// See [`bytes::Shlex`].
+pub struct Shlex<'a>(bytes::Shlex<'a>);
 
 impl<'a> Shlex<'a> {
     pub fn new(in_str: &'a str) -> Self {
-        Shlex {
-            in_iter: in_str.bytes(),
-            line_no: 1,
-            had_error: false,
-        }
-    }
-
-    fn parse_word(&mut self, mut ch: u8) -> Option<String> {
-        let mut result: Vec<u8> = Vec::new();
-        loop {
-            match ch as char {
-                '"' => if let Err(()) = self.parse_double(&mut result) {
-                    self.had_error = true;
-                    return None;
-                },
-                '\'' => if let Err(()) = self.parse_single(&mut result) {
-                    self.had_error = true;
-                    return None;
-                },
-                '\\' => if let Some(ch2) = self.next_char() {
-                    if ch2 != '\n' as u8 { result.push(ch2); }
-                } else {
-                    self.had_error = true;
-                    return None;
-                },
-                ' ' | '\t' | '\n' => { break; },
-                _ => { result.push(ch as u8); },
-            }
-            if let Some(ch2) = self.next_char() { ch = ch2; } else { break; }
-        }
-        unsafe { Some(String::from_utf8_unchecked(result)) }
-    }
-
-    fn parse_double(&mut self, result: &mut Vec<u8>) -> Result<(), ()> {
-        loop {
-            if let Some(ch2) = self.next_char() {
-                match ch2 as char {
-                    '\\' => {
-                        if let Some(ch3) = self.next_char() {
-                            match ch3 as char {
-                                // \$ => $
-                                '$' | '`' | '"' | '\\' => { result.push(ch3); },
-                                // \<newline> => nothing
-                                '\n' => {},
-                                // \x => =x
-                                _ => { result.push('\\' as u8); result.push(ch3); }
-                            }
-                        } else {
-                            return Err(());
-                        }
-                    },
-                    '"' => { return Ok(()); },
-                    _ => { result.push(ch2); },
-                }
-            } else {
-                return Err(());
-            }
-        }
-    }
-
-    fn parse_single(&mut self, result: &mut Vec<u8>) -> Result<(), ()> {
-        loop {
-            if let Some(ch2) = self.next_char() {
-                match ch2 as char {
-                    '\'' => { return Ok(()); },
-                    _ => { result.push(ch2); },
-                }
-            } else {
-                return Err(());
-            }
-        }
-    }
-
-    fn next_char(&mut self) -> Option<u8> {
-        let res = self.in_iter.next();
-        if res == Some('\n' as u8) { self.line_no += 1; }
-        res
+        Self(bytes::Shlex::new(in_str.as_bytes()))
     }
 }
 
 impl<'a> Iterator for Shlex<'a> {
     type Item = String;
     fn next(&mut self) -> Option<String> {
-        if let Some(mut ch) = self.next_char() {
-            // skip initial whitespace
-            loop {
-                match ch as char {
-                    ' ' | '\t' | '\n' => {},
-                    '#' => {
-                        while let Some(ch2) = self.next_char() {
-                            if ch2 as char == '\n' { break; }
-                        }
-                    },
-                    _ => { break; }
-                }
-                if let Some(ch2) = self.next_char() { ch = ch2; } else { return None; }
-            }
-            self.parse_word(ch)
-        } else { // no initial character
-            None
-        }
+        self.0.next().map(|byte_word| {
+            // Safety: given valid UTF-8, bytes::Shlex will always return valid UTF-8.
+            unsafe { String::from_utf8_unchecked(byte_word) }
+        })
     }
+}
 
+impl<'a> core::ops::Deref for Shlex<'a> {
+    type Target = bytes::Shlex<'a>;
+
+    fn deref(&self) -> &Self::Target {
+        &self.0
+    }
+}
+
+impl<'a> core::ops::DerefMut for Shlex<'a> {
+    fn deref_mut(&mut self) -> &mut Self::Target {
+        &mut self.0
+    }
 }
 
 /// Convenience function that consumes the whole string at once.  Returns None if the input was
@@ -159,26 +78,15 @@ pub fn split(in_str: &str) -> Option<Vec<String>> {
 
 /// Given a single word, return a string suitable to encode it as a shell argument.
 pub fn quote(in_str: &str) -> Cow<str> {
-    if in_str.len() == 0 {
-        "\"\"".into()
-    } else if in_str.bytes().any(|c| match c as char {
-        '|' | '&' | ';' | '<' | '>' | '(' | ')' | '$' | '`' | '\\' | '"' | '\'' | ' ' | '\t' |
-        '\r' | '\n' | '*' | '?' | '[' | '#' | '~' | '=' | '%' => true,
-        _ => false
-    }) {
-        let mut out: Vec<u8> = Vec::new();
-        out.push('"' as u8);
-        for c in in_str.bytes() {
-            match c as char {
-                '$' | '`' | '"' | '\\' => out.push('\\' as u8),
-                _ => ()
-            }
-            out.push(c);
+    match bytes::quote(in_str.as_bytes()) {
+        Cow::Borrowed(out) => {
+            // Safety: given valid UTF-8, bytes::quote() will always return valid UTF-8.
+            unsafe { core::str::from_utf8_unchecked(out) }.into()
         }
-        out.push('"' as u8);
-        unsafe { String::from_utf8_unchecked(out) }.into()
-    } else {
-        in_str.into()
+        Cow::Owned(out) => {
+            // Safety: given valid UTF-8, bytes::quote() will always return valid UTF-8.
+            unsafe { String::from_utf8_unchecked(out) }.into()
+        }
     }
 }
 
