@@ -1,4 +1,4 @@
-# Next release
+# 1.2.0
 
 * Adds `bytes` module to support operating directly on byte strings.
 
