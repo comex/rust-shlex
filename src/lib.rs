@@ -22,13 +22,13 @@
 #![cfg_attr(not(feature = "std"), no_std)]
 
 extern crate alloc;
-use alloc::vec::Vec;
 use alloc::borrow::Cow;
+#[cfg(test)]
+use alloc::borrow::ToOwned;
 use alloc::string::String;
 #[cfg(test)]
 use alloc::vec;
-#[cfg(test)]
-use alloc::borrow::ToOwned;
+use alloc::vec::Vec;
 
 pub mod bytes;
 
@@ -73,7 +73,11 @@ impl<'a> core::ops::DerefMut for Shlex<'a> {
 pub fn split(in_str: &str) -> Option<Vec<String>> {
     let mut shl = Shlex::new(in_str);
     let res = shl.by_ref().collect();
-    if shl.had_error { None } else { Some(res) }
+    if shl.had_error {
+        None
+    } else {
+        Some(res)
+    }
 }
 
 /// Given a single word, return a string suitable to encode it as a shell argument.
@@ -93,10 +97,7 @@ pub fn quote(in_str: &str) -> Cow<str> {
 /// Convenience function that consumes an iterable of words and turns it into a single string,
 /// quoting words when necessary. Consecutive words will be separated by a single space.
 pub fn join<'a, I: IntoIterator<Item = &'a str>>(words: I) -> String {
-    words.into_iter()
-        .map(quote)
-        .collect::<Vec<_>>()
-        .join(" ")
+    words.into_iter().map(quote).collect::<Vec<_>>().join(" ")
 }
 
 #[cfg(test)]
@@ -126,7 +127,10 @@ static SPLIT_TEST_ITEMS: &'static [(&'static str, Option<&'static [&'static str]
 #[test]
 fn test_split() {
     for &(input, output) in SPLIT_TEST_ITEMS {
-        assert_eq!(split(input), output.map(|o| o.iter().map(|&x| x.to_owned()).collect()));
+        assert_eq!(
+            split(input),
+            output.map(|o| o.iter().map(|&x| x.to_owned()).collect())
+        );
     }
 }
 
