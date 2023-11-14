@@ -22,13 +22,9 @@
 #![cfg_attr(not(feature = "std"), no_std)]
 
 extern crate alloc;
-use alloc::vec::Vec;
 use alloc::borrow::Cow;
 use alloc::string::String;
-#[cfg(test)]
-use alloc::vec;
-#[cfg(test)]
-use alloc::borrow::ToOwned;
+use alloc::vec::Vec;
 
 pub mod bytes;
 
@@ -73,7 +69,11 @@ impl<'a> core::ops::DerefMut for Shlex<'a> {
 pub fn split(in_str: &str) -> Option<Vec<String>> {
     let mut shl = Shlex::new(in_str);
     let res = shl.by_ref().collect();
-    if shl.had_error { None } else { Some(res) }
+    if shl.had_error {
+        None
+    } else {
+        Some(res)
+    }
 }
 
 /// Given a single word, return a string suitable to encode it as a shell argument.
@@ -93,65 +93,72 @@ pub fn quote(in_str: &str) -> Cow<str> {
 /// Convenience function that consumes an iterable of words and turns it into a single string,
 /// quoting words when necessary. Consecutive words will be separated by a single space.
 pub fn join<'a, I: IntoIterator<Item = &'a str>>(words: I) -> String {
-    words.into_iter()
-        .map(quote)
-        .collect::<Vec<_>>()
-        .join(" ")
+    words.into_iter().map(quote).collect::<Vec<_>>().join(" ")
 }
 
 #[cfg(test)]
-static SPLIT_TEST_ITEMS: &'static [(&'static str, Option<&'static [&'static str]>)] = &[
-    ("foo$baz", Some(&["foo$baz"])),
-    ("foo baz", Some(&["foo", "baz"])),
-    ("foo\"bar\"baz", Some(&["foobarbaz"])),
-    ("foo \"bar\"baz", Some(&["foo", "barbaz"])),
-    ("   foo \nbar", Some(&["foo", "bar"])),
-    ("foo\\\nbar", Some(&["foobar"])),
-    ("\"foo\\\nbar\"", Some(&["foobar"])),
-    ("'baz\\$b'", Some(&["baz\\$b"])),
-    ("'baz\\\''", None),
-    ("\\", None),
-    ("\"\\", None),
-    ("'\\", None),
-    ("\"", None),
-    ("'", None),
-    ("foo #bar\nbaz", Some(&["foo", "baz"])),
-    ("foo #bar", Some(&["foo"])),
-    ("foo#bar", Some(&["foo#bar"])),
-    ("foo\"#bar", None),
-    ("'\\n'", Some(&["\\n"])),
-    ("'\\\\n'", Some(&["\\\\n"])),
-];
+mod test {
+    use alloc::borrow::ToOwned;
+    use alloc::vec;
 
-#[test]
-fn test_split() {
-    for &(input, output) in SPLIT_TEST_ITEMS {
-        assert_eq!(split(input), output.map(|o| o.iter().map(|&x| x.to_owned()).collect()));
-    }
-}
+    use super::*;
 
-#[test]
-fn test_lineno() {
-    let mut sh = Shlex::new("\nfoo\nbar");
-    while let Some(word) = sh.next() {
-        if word == "bar" {
-            assert_eq!(sh.line_no, 3);
+    static SPLIT_TEST_ITEMS: &[(&str, Option<&[&str]>)] = &[
+        ("foo$baz", Some(&["foo$baz"])),
+        ("foo baz", Some(&["foo", "baz"])),
+        ("foo\"bar\"baz", Some(&["foobarbaz"])),
+        ("foo \"bar\"baz", Some(&["foo", "barbaz"])),
+        ("   foo \nbar", Some(&["foo", "bar"])),
+        ("foo\\\nbar", Some(&["foobar"])),
+        ("\"foo\\\nbar\"", Some(&["foobar"])),
+        ("'baz\\$b'", Some(&["baz\\$b"])),
+        ("'baz\\\''", None),
+        ("\\", None),
+        ("\"\\", None),
+        ("'\\", None),
+        ("\"", None),
+        ("'", None),
+        ("foo #bar\nbaz", Some(&["foo", "baz"])),
+        ("foo #bar", Some(&["foo"])),
+        ("foo#bar", Some(&["foo#bar"])),
+        ("foo\"#bar", None),
+        ("'\\n'", Some(&["\\n"])),
+        ("'\\\\n'", Some(&["\\\\n"])),
+    ];
+
+    #[test]
+    fn test_split() {
+        for &(input, output) in SPLIT_TEST_ITEMS {
+            assert_eq!(
+                split(input),
+                output.map(|o| o.iter().map(|&x| x.to_owned()).collect())
+            );
         }
     }
-}
 
-#[test]
-fn test_quote() {
-    assert_eq!(quote("foobar"), "foobar");
-    assert_eq!(quote("foo bar"), "\"foo bar\"");
-    assert_eq!(quote("\""), "\"\\\"\"");
-    assert_eq!(quote(""), "\"\"");
-}
+    #[test]
+    fn test_lineno() {
+        let mut sh = Shlex::new("\nfoo\nbar");
+        while let Some(word) = sh.next() {
+            if word == "bar" {
+                assert_eq!(sh.line_no, 3);
+            }
+        }
+    }
 
-#[test]
-fn test_join() {
-    assert_eq!(join(vec![]), "");
-    assert_eq!(join(vec![""]), "\"\"");
-    assert_eq!(join(vec!["a", "b"]), "a b");
-    assert_eq!(join(vec!["foo bar", "baz"]), "\"foo bar\" baz");
+    #[test]
+    fn test_quote() {
+        assert_eq!(quote("foobar"), "foobar");
+        assert_eq!(quote("foo bar"), "\"foo bar\"");
+        assert_eq!(quote("\""), "\"\\\"\"");
+        assert_eq!(quote(""), "\"\"");
+    }
+
+    #[test]
+    fn test_join() {
+        assert_eq!(join(vec![]), "");
+        assert_eq!(join(vec![""]), "\"\"");
+        assert_eq!(join(vec!["a", "b"]), "a b");
+        assert_eq!(join(vec!["foo bar", "baz"]), "\"foo bar\" baz");
+    }
 }
