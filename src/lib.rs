@@ -146,6 +146,7 @@ fn test_quote() {
     assert_eq!(quote("foo bar"), "\"foo bar\"");
     assert_eq!(quote("\""), "\"\\\"\"");
     assert_eq!(quote(""), "\"\"");
+    assert_eq!(quote("{foo,bar}"), "\"{foo,bar}\"");
 }
 
 #[test]

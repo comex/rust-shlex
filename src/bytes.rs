@@ -170,7 +170,8 @@ pub fn quote(in_bytes: &[u8]) -> Cow<[u8]> {
         b"\"\""[..].into()
     } else if in_bytes.iter().any(|c| match *c as char {
         '|' | '&' | ';' | '<' | '>' | '(' | ')' | '$' | '`' | '\\' | '"' | '\'' | ' ' | '\t' |
-        '\r' | '\n' | '*' | '?' | '[' | '#' | '~' | '=' | '%' => true,
+        '\r' | '\n' | '*' | '?' | '[' | '#' | '~' | '=' | '%' | '{' | '}' |
+        '\u{80}' ..= '\u{10ffff}' => true,
         _ => false
     }) {
         let mut out: Vec<u8> = Vec::new();
@@ -200,8 +201,11 @@ pub fn join<'a, I: core::iter::IntoIterator<Item = &'a [u8]>>(words: I) -> Vec<u
 
 #[cfg(test)]
 const INVALID_UTF8: &[u8] = b"\xa1";
+#[cfg(test)]
+const INVALID_UTF8_DOUBLEQUOTED: &[u8] = b"\"\xa1\"";
 
 #[test]
+#[allow(invalid_from_utf8)]
 fn test_invalid_utf8() {
     // Check that our test string is actually invalid UTF-8.
     assert!(core::str::from_utf8(INVALID_UTF8).is_err());
@@ -255,7 +259,7 @@ fn test_quote() {
     assert_eq!(quote(b"foo bar"), &b"\"foo bar\""[..]);
     assert_eq!(quote(b"\""), &b"\"\\\"\""[..]);
     assert_eq!(quote(b""), &b"\"\""[..]);
-    assert_eq!(quote(INVALID_UTF8), INVALID_UTF8);
+    assert_eq!(quote(INVALID_UTF8), INVALID_UTF8_DOUBLEQUOTED);
 }
 
 #[test]
@@ -264,5 +268,5 @@ fn test_join() {
     assert_eq!(join(vec![&b""[..]]), &b"\"\""[..]);
     assert_eq!(join(vec![&b"a"[..], &b"b"[..]]), &b"a b"[..]);
     assert_eq!(join(vec![&b"foo bar"[..], &b"baz"[..]]), &b"\"foo bar\" baz"[..]);
-    assert_eq!(join(vec![INVALID_UTF8]), INVALID_UTF8);
+    assert_eq!(join(vec![INVALID_UTF8]), INVALID_UTF8_DOUBLEQUOTED);
 }
