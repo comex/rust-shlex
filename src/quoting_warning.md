@@ -247,7 +247,7 @@ Numeric escapes would solve this as well.
 Versions of this crate before 1.3.0 did not quote `{`, `}`, and `\xa0`.
 
 See:
-- <https://github.com/advisories/GHSA-r7qv-8r2h-pg27>
+- <https://github.com/comex/rust-shlex/security/advisories/GHSA-r7qv-8r2h-pg27>
 - (TODO: Add Rustsec link)
 
 ## Solved: `!` and `^`
