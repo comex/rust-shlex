@@ -1,0 +1,31 @@
+[package]
+name = "fuzz_quote_python"
+version = "0.0.0"
+authors = ["see main rust-shlex Cargo.toml for authors"]
+license = "MIT OR Apache-2.0"
+publish = false
+edition = "2021"
+
+[package.metadata]
+cargo-fuzz = true
+
+[dependencies]
+libfuzzer-sys = "0.4"
+nu-pretty-hex = "0.87.1"
+
+[dependencies.pyo3]
+version = "0.20.2"
+features = ["auto-initialize"]
+
+[dependencies.shlex]
+path = "../.."
+
+[build-dependencies]
+cc = "1.0"
+
+[[bin]]
+name = "fuzz_quote_python"
+path = "src/fuzz.rs"
+test = false
+doc = false
+

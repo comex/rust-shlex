@@ -1,7 +1,7 @@
 [package]
 name = "shlex-fuzz"
 version = "0.0.0"
-authors = ["Automatically generated"]
+authors = ["see main rust-shlex Cargo.toml for authors"]
 publish = false
 edition = "2018"
 
@@ -14,9 +14,13 @@ libfuzzer-sys = "0.4"
 [dependencies.shlex]
 path = ".."
 
-# Prevent this from interfering with workspaces
 [workspace]
-members = ["."]
+members = [
+    ".",
+    "fuzz_quote_real_shell",
+    "fuzz_quote_python",
+    "fuzz_quote_wordexp",
+]
 
 [[bin]]
 name = "fuzz_next"
