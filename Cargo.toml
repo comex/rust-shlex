@@ -21,3 +21,6 @@ rust-version = "1.46.0"
 [features]
 std = []
 default = ["std"]
+
+[lints.rust]
+unexpected_cfgs = { level = "warn", check-cfg = ['cfg(manual_codegen_check)'] }
