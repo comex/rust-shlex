@@ -63,7 +63,7 @@ impl<'a> Shlex<'a> {
     }
 }
 
-impl<'a> Iterator for Shlex<'a> {
+impl Iterator for Shlex<'_> {
     type Item = String;
     fn next(&mut self) -> Option<String> {
         self.0.next().map(|byte_word| {
@@ -81,7 +81,7 @@ impl<'a> core::ops::Deref for Shlex<'a> {
     }
 }
 
-impl<'a> core::ops::DerefMut for Shlex<'a> {
+impl core::ops::DerefMut for Shlex<'_> {
     fn deref_mut(&mut self) -> &mut Self::Target {
         &mut self.0
     }
@@ -243,7 +243,7 @@ pub fn try_quote(in_str: &str) -> Result<Cow<str>, QuoteError> {
 }
 
 #[cfg(test)]
-static SPLIT_TEST_ITEMS: &'static [(&'static str, Option<&'static [&'static str]>)] = &[
+static SPLIT_TEST_ITEMS: &[(&str, Option<&[&str]>)] = &[
     ("foo$baz", Some(&["foo$baz"])),
     ("foo baz", Some(&["foo", "baz"])),
     ("foo\"bar\"baz", Some(&["foobarbaz"])),
