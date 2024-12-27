@@ -242,13 +242,13 @@ Numeric escapes would solve this as well.
 
 # Solved issues
 
-## Solved: Past vulnerability (GHSA-r7qv-8r2h-pg27 / RUSTSEC-2024-XXX)
+## Solved: Past vulnerability (GHSA-r7qv-8r2h-pg27 / RUSTSEC-2024-0006)
 
 Versions of this crate before 1.3.0 did not quote `{`, `}`, and `\xa0`.
 
 See:
 - <https://github.com/comex/rust-shlex/security/advisories/GHSA-r7qv-8r2h-pg27>
-- (TODO: Add Rustsec link)
+- <https://rustsec.org/advisories/RUSTSEC-2024-0006.html>
 
 ## Solved: `!` and `^`
 
