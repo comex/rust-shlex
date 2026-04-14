@@ -11,7 +11,7 @@ cargo-fuzz = true
 
 [dependencies]
 libfuzzer-sys = "0.4"
-rand = "0.8.4"
+rand = "0.9.3"
 bstr = "1.8.0"
 nu-pretty-hex = "0.87.1"
 
