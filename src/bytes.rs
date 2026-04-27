@@ -481,7 +481,7 @@ pub fn try_join<'a, I: IntoIterator<Item = &'a [u8]>>(words: I) -> Result<Vec<u8
 ///
 /// The string equivalent is [shlex::quote].
 #[deprecated(since = "1.3.0", note = "replace with `try_quote(str)?` to avoid nul byte danger")]
-pub fn quote(in_bytes: &[u8]) -> Cow<[u8]> {
+pub fn quote(in_bytes: &[u8]) -> Cow<'_, [u8]> {
     Quoter::new().allow_nul(true).quote(in_bytes).unwrap()
 }
 
@@ -494,7 +494,7 @@ pub fn quote(in_bytes: &[u8]) -> Cow<[u8]> {
 /// (That configuration never returns `Err`, so this function does not panic.)
 ///
 /// The string equivalent is [shlex::try_quote].
-pub fn try_quote(in_bytes: &[u8]) -> Result<Cow<[u8]>, QuoteError> {
+pub fn try_quote(in_bytes: &[u8]) -> Result<Cow<'_, [u8]>, QuoteError> {
     Quoter::new().quote(in_bytes)
 }
 

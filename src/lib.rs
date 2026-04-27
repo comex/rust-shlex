@@ -225,7 +225,7 @@ pub fn try_join<'a, I: IntoIterator<Item = &'a str>>(words: I) -> Result<String,
 ///
 /// The bytes equivalent is [bytes::quote].
 #[deprecated(since = "1.3.0", note = "replace with `try_quote(str)?` to avoid nul byte danger")]
-pub fn quote(in_str: &str) -> Cow<str> {
+pub fn quote(in_str: &str) -> Cow<'_, str> {
     Quoter::new().allow_nul(true).quote(in_str).unwrap()
 }
 
@@ -238,7 +238,7 @@ pub fn quote(in_str: &str) -> Cow<str> {
 /// (That configuration never returns `Err`, so this function does not panic.)
 ///
 /// The bytes equivalent is [bytes::try_quote].
-pub fn try_quote(in_str: &str) -> Result<Cow<str>, QuoteError> {
+pub fn try_quote(in_str: &str) -> Result<Cow<'_, str>, QuoteError> {
     Quoter::new().quote(in_str)
 }
 
