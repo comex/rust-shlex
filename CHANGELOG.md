@@ -1,6 +1,6 @@
-# Unreleased
+# 1.3.1
 
-* Fixed the URL of the security advisory linked from the documentation.
+* Trivial improvements.
 
 # 1.3.0
 

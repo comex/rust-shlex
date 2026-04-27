@@ -70,13 +70,13 @@ impl<'a> Shlex<'a> {
                     return None;
                 },
                 '\\' => if let Some(ch2) = self.next_char() {
-                    if ch2 != '\n' as u8 { result.push(ch2); }
+                    if ch2 != b'\n' { result.push(ch2); }
                 } else {
                     self.had_error = true;
                     return None;
                 },
                 ' ' | '\t' | '\n' => { break; },
-                _ => { result.push(ch as u8); },
+                _ => { result.push(ch); },
             }
             if let Some(ch2) = self.next_char() { ch = ch2; } else { break; }
         }
@@ -95,7 +95,7 @@ impl<'a> Shlex<'a> {
                                 // \<newline> => nothing
                                 '\n' => {},
                                 // \x => =x
-                                _ => { result.push('\\' as u8); result.push(ch3); }
+                                _ => { result.push(b'\\'); result.push(ch3); }
                             }
                         } else {
                             return Err(());
@@ -130,7 +130,7 @@ impl<'a> Shlex<'a> {
     }
 }
 
-impl<'a> Iterator for Shlex<'a> {
+impl Iterator for Shlex<'_> {
     type Item = Vec<u8>;
     fn next(&mut self) -> Option<Self::Item> {
         if let Some(mut ch) = self.next_char() {
@@ -427,7 +427,7 @@ fn append_quoted_chunk(out: &mut Vec<u8>, cur_chunk: &[u8], strategy: QuotingStr
         QuotingStrategy::DoubleQuoted => {
             out.reserve(cur_chunk.len() + 2);
             out.push(b'"');
-            for &c in cur_chunk.into_iter() {
+            for &c in cur_chunk.iter() {
                 if let b'$' | b'`' | b'"' | b'\\' = c {
                     // Add a preceding backslash.
                     // Note: We shouldn't actually get here for $ and ` because they don't pass
@@ -511,7 +511,7 @@ fn test_invalid_utf8() {
 }
 
 #[cfg(test)]
-static SPLIT_TEST_ITEMS: &'static [(&'static [u8], Option<&'static [&'static [u8]]>)] = &[
+static SPLIT_TEST_ITEMS: &[(&[u8], Option<&[&[u8]]>)] = &[
     (b"foo$baz", Some(&[b"foo$baz"])),
     (b"foo baz", Some(&[b"foo", b"baz"])),
     (b"foo\"bar\"baz", Some(&[b"foobarbaz"])),
