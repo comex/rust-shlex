@@ -208,7 +208,7 @@ impl Quoter {
             // Empty string.  Special case that isn't meaningful as only part of a word.
             return Ok(b"''"[..].into());
         }
-        if !self.allow_nul && in_bytes.iter().any(|&b| b == b'\0') {
+        if !self.allow_nul && in_bytes.contains(&b'\0') {
             return Err(QuoteError::Nul);
         }
         let mut out: Vec<u8> = Vec::new();
