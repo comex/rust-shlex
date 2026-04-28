@@ -1,6 +1,7 @@
 # 2.0.0
 
 * **Breaking:** Items that were marked as deprecated in 1.x have been removed: `join`, `quote`, `bytes::join`, and `bytes::quote`.
+* **Breaking:** The `DerefMut` impl for `Shlex` has been removed since it was unsound. New `unsafe` APIs have been added in its place: `Shlex::from_bytes`, `Shlex::as_bytes_mut`.
 
 # 1.3.0
 

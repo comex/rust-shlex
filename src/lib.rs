@@ -61,6 +61,20 @@ impl<'a> Shlex<'a> {
     pub fn new(in_str: &'a str) -> Self {
         Self(bytes::Shlex::new(in_str.as_bytes()))
     }
+
+    /// # Safety
+    ///
+    /// The parameter must have been constructed from valid UTF-8.
+    pub unsafe fn from_bytes(bytes: bytes::Shlex<'a>) -> Self {
+        Self(bytes)
+    }
+
+    /// # Safety
+    ///
+    /// If the returned reference is reassigned, the new [`bytes::Shlex`] must have been constructed from valid UTF-8.
+    pub unsafe fn as_bytes_mut(&mut self) -> &mut bytes::Shlex<'a> {
+        &mut self.0
+    }
 }
 
 impl Iterator for Shlex<'_> {
@@ -78,12 +92,6 @@ impl<'a> core::ops::Deref for Shlex<'a> {
 
     fn deref(&self) -> &Self::Target {
         &self.0
-    }
-}
-
-impl core::ops::DerefMut for Shlex<'_> {
-    fn deref_mut(&mut self) -> &mut Self::Target {
-        &mut self.0
     }
 }
 
