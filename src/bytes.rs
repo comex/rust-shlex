@@ -11,13 +11,13 @@
 //!
 //! ```rust
 //! #[cfg(unix)] {
-//!     use shlex::bytes::quote;
+//!     use shlex::bytes::try_quote;
 //!     use std::ffi::OsStr;
 //!     use std::os::unix::ffi::OsStrExt;
 //!
 //!     // `\x80` is invalid in UTF-8.
 //!     let os_str = OsStr::from_bytes(b"a\x80b c");
-//!     assert_eq!(quote(os_str.as_bytes()), &b"'a\x80b c'"[..]);
+//!     assert_eq!(try_quote(os_str.as_bytes()).unwrap(), &b"'a\x80b c'"[..]);
 //! }
 //! ```
 //!
