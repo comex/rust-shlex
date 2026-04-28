@@ -27,8 +27,6 @@ extern crate alloc;
 use alloc::vec::Vec;
 use alloc::borrow::Cow;
 #[cfg(test)]
-use alloc::vec;
-#[cfg(test)]
 use alloc::borrow::ToOwned;
 #[cfg(all(doc, not(doctest)))]
 use crate::{self as shlex, quoting_warning};
@@ -467,8 +465,6 @@ pub fn try_quote(in_bytes: &[u8]) -> Result<Cow<'_, [u8]>, QuoteError> {
 
 #[cfg(test)]
 const INVALID_UTF8: &[u8] = b"\xa1";
-#[cfg(test)]
-const INVALID_UTF8_SINGLEQUOTED: &[u8] = b"'\xa1'";
 
 #[test]
 #[allow(invalid_from_utf8)]
