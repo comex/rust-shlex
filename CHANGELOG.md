@@ -1,6 +1,6 @@
-# 1.3.1
+# 2.0.0
 
-* Trivial improvements.
+* **Breaking:** Items that were marked as deprecated in 1.x have been removed: `join`, `quote`, `bytes::join`, and `bytes::quote`.
 
 # 1.3.0
 
