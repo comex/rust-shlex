@@ -360,6 +360,6 @@ separator.  Treatment as a word separator only happens for `b"\xa0"` alone, whic
 */
 
 // `use` declarations to make auto links work:
-use ::{Shlex, Quoter, QuoteError};
+use crate::{bytes, Shlex, Quoter, QuoteError};
 
 // TODO: add more about copy-paste and human readability.
