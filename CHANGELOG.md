@@ -1,3 +1,7 @@
+# 2.0.1
+
+* Fixes a compile error when building the documentation.
+
 # 2.0.0
 
 * **Breaking:** Items that were marked as deprecated in 1.x have been removed: `join`, `quote`, `bytes::join`, and `bytes::quote`.
