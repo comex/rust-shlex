@@ -47,6 +47,8 @@ use alloc::vec;
 use alloc::borrow::ToOwned;
 
 pub mod bytes;
+#[cfg(all(feature = "std", any(windows, unix)))]
+pub mod os_str;
 #[cfg(all(doc, not(doctest)))]
 #[path = "quoting_warning.md"]
 pub mod quoting_warning;
