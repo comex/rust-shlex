@@ -7,21 +7,19 @@
 //!
 //! This is used internally by the [outer module](crate), and may be more
 //! convenient if you are working with byte slices (`[u8]`) or types that are
-//! wrappers around bytes, such as [`OsStr`](std::ffi::OsStr):
+//! wrappers around bytes. If you need to work with [`OsStr`], use the
+//! [osstr module](crate::os_str).
 //!
 //! ```rust
-//! #[cfg(unix)] {
-//!     use shlex::bytes::try_quote;
-//!     use std::ffi::OsStr;
-//!     use std::os::unix::ffi::OsStrExt;
+//! use shlex::bytes::try_quote;
+//! use std::ffi::OsStr;
 //!
-//!     // `\x80` is invalid in UTF-8.
-//!     let os_str = OsStr::from_bytes(b"a\x80b c");
-//!     assert_eq!(try_quote(os_str.as_bytes()).unwrap(), &b"'a\x80b c'"[..]);
-//! }
+//! // `\x80` is invalid in UTF-8.
+//! let s = b"a\x80b c";
+//! assert_eq!(try_quote(s).unwrap(), &b"'a\x80b c'"[..]);
 //! ```
 //!
-//! (On Windows, `OsStr` uses 16 bit wide characters so this will not work.)
+//! [`OsStr`]: std::ffi::OsStr
 
 extern crate alloc;
 use alloc::vec::Vec;
