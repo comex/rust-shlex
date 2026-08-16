@@ -291,18 +291,30 @@ fn test_cases() -> impl Iterator<Item = (String, String)> {
         <a..b             => <a..b>
         <'$>              => <"'"'$'>
         <"^>              => <'"''^'>
+
+        # Some of the above with multibyte characters in the mix
+        <𝄞music>          => <'𝄞music'>
+        <NL💖>            => <'NL💖'>
+        <a,b,🏴‍☠️,d>         => <'a,b,🏴‍☠️,d'>
     "#;
 
-    tests.trim().split('\n').map(|test| {
-        let parts = test.replace("NL", "\n");
-        let mut parts = parts
-            .split("=>")
-            .map(|part| part.trim().trim_start_matches('<').trim_end_matches('>'));
-        let unquoted = parts.next().unwrap();
-        let quoted_expected = parts.next().unwrap();
-        assert_eq!(parts.next(), None);
-        (unquoted.to_owned(), quoted_expected.to_owned())
-    })
+    tests
+        .trim()
+        .split('\n')
+        .filter(|test| {
+            let trimmed = test.trim();
+            !trimmed.starts_with('#') && !trimmed.is_empty()
+        })
+        .map(|test| {
+            let parts = test.replace("NL", "\n");
+            let mut parts = parts
+                .split("=>")
+                .map(|part| part.trim().trim_start_matches('<').trim_end_matches('>'));
+            let unquoted = parts.next().unwrap();
+            let quoted_expected = parts.next().unwrap();
+            assert_eq!(parts.next(), None);
+            (unquoted.to_owned(), quoted_expected.to_owned())
+        })
 }
 
 #[test]
