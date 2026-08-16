@@ -47,6 +47,8 @@ use alloc::vec;
 use alloc::borrow::ToOwned;
 
 pub mod bytes;
+#[cfg(all(feature = "std", any(windows, unix)))]
+pub mod os_str;
 #[cfg(all(doc, not(doctest)))]
 #[path = "quoting_warning.md"]
 pub mod quoting_warning;
@@ -258,9 +260,8 @@ fn test_lineno() {
     }
 }
 
-#[test]
-#[cfg_attr(not(feature = "std"), allow(unreachable_code, unused_mut))]
-fn test_quote() {
+#[cfg(test)]
+fn test_cases() -> impl Iterator<Item = (String, String)> {
     // This is a list of (unquoted, quoted) pairs.
     // But it's using a single long (raw) string literal with an ad-hoc format, just because it's
     // hard to read if we have to put the test strings through Rust escaping on top of the escaping
@@ -292,25 +293,49 @@ fn test_quote() {
         <a..b             => <a..b>
         <'$>              => <"'"'$'>
         <"^>              => <'"''^'>
+
+        # Some of the above with multibyte characters in the mix
+        <𝄞music>          => <'𝄞music'>
+        <NL💖>            => <'NL💖'>
+        <a,b,🏴‍☠️,d>         => <'a,b,🏴‍☠️,d'>
     "#;
+
+    tests
+        .trim()
+        .split('\n')
+        .filter(|test| {
+            let trimmed = test.trim();
+            !trimmed.starts_with('#') && !trimmed.is_empty()
+        })
+        .map(|test| {
+            let parts = test.replace("NL", "\n");
+            let mut parts = parts
+                .split("=>")
+                .map(|part| part.trim().trim_start_matches('<').trim_end_matches('>'));
+            let unquoted = parts.next().unwrap();
+            let quoted_expected = parts.next().unwrap();
+            assert_eq!(parts.next(), None);
+            (unquoted.to_owned(), quoted_expected.to_owned())
+        })
+}
+
+#[test]
+#[cfg_attr(not(feature = "std"), allow(unreachable_code, unused_mut))]
+fn test_quote() {
     let mut ok = true;
-    for test in tests.trim().split('\n') {
-        let parts: Vec<String> = test
-            .replace("NL", "\n")
-            .split("=>")
-            .map(|part| part.trim().trim_start_matches('<').trim_end_matches('>').to_owned())
-            .collect();
-        assert!(parts.len() == 2);
-        let unquoted = &*parts[0];
-        let quoted_expected = &*parts[1];
-        let quoted_actual = try_quote(&parts[0]).unwrap();
+    for (unquoted, quoted_expected) in test_cases() {
+        let quoted_actual = try_quote(&unquoted).unwrap();
         if quoted_expected != quoted_actual {
             #[cfg(not(feature = "std"))]
-            panic!("FAIL: for input <{}>, expected <{}>, got <{}>",
-                     unquoted, quoted_expected, quoted_actual);
+            panic!(
+                "FAIL: for input <{}>, expected <{}>, got <{}>",
+                unquoted, quoted_expected, quoted_actual
+            );
             #[cfg(feature = "std")]
-            println!("FAIL: for input <{}>, expected <{}>, got <{}>",
-                     unquoted, quoted_expected, quoted_actual);
+            println!(
+                "FAIL: for input <{}>, expected <{}>, got <{}>",
+                unquoted, quoted_expected, quoted_actual
+            );
             ok = false;
         }
     }
