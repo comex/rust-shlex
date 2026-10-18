@@ -143,7 +143,7 @@ impl Iterator for Shlex<'_> {
                     },
                     _ => { break; }
                 }
-                if let Some(ch2) = self.next_char() { ch = ch2; } else { return None; }
+                ch = self.next_char()?;
             }
             self.parse_word(ch)
         } else { // no initial character

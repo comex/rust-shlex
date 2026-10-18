@@ -24,6 +24,24 @@ Disabling the `std` feature (which is enabled by default) will allow the crate
 to work in `no_std` environments, where the `alloc` crate, and a global
 allocator, are available.
 
+# Example
+
+`split` separates shell words and removes their quoting. `try_join` does the
+reverse, quoting an argument list as shell text. These functions do not execute
+commands or expand shell variables.
+
+```rust
+let words = shlex::split(r#"cp "source file" 'destination file'"#).unwrap();
+assert_eq!(words, vec!["cp", "source file", "destination file"]);
+
+// Unmatched quotes are an error.
+assert_eq!(shlex::split("unfinished 'quote"), None);
+
+// Quote the words so they can be parsed back without losing spaces.
+let quoted = shlex::try_join(words.iter().map(|word| word.as_str())).unwrap();
+assert_eq!(shlex::split(&quoted), Some(words));
+```
+
 # LICENSE
 
 The source code in this repository is Licensed under either of
