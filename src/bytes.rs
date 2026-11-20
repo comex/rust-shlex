@@ -136,6 +136,11 @@ impl Iterator for Shlex<'_> {
             loop {
                 match ch as char {
                     ' ' | '\t' | '\n' => {},
+                    // A backslash-newline between words is a line continuation:
+                    // it is removed and does not start a word.
+                    '\\' if self.in_iter.as_slice().first() == Some(&b'\n') => {
+                        self.next_char();
+                    },
                     '#' => {
                         while let Some(ch2) = self.next_char() {
                             if ch2 as char == '\n' { break; }
@@ -482,6 +487,13 @@ static SPLIT_TEST_ITEMS: &[(&[u8], Option<&[&[u8]]>)] = &[
     (b"   foo \nbar", Some(&[b"foo", b"bar"])),
     (b"foo\\\nbar", Some(&[b"foobar"])),
     (b"\"foo\\\nbar\"", Some(&[b"foobar"])),
+    (b"foo \\\n bar", Some(&[b"foo", b"bar"])),
+    (b"foo \\\n", Some(&[b"foo"])),
+    (b"\\\n", Some(&[])),
+    (b"\\\n\\\nfoo", Some(&[b"foo"])),
+    (b"foo \\\n#bar", Some(&[b"foo"])),
+    (b"foo\\\n#bar", Some(&[b"foo#bar"])),
+    (b"foo \\\n\"\"", Some(&[b"foo", b""])),
     (b"'baz\\$b'", Some(&[b"baz\\$b"])),
     (b"'baz\\\''", None),
     (b"\\", None),
